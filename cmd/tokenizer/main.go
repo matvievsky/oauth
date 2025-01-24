@@ -21,6 +21,7 @@ var getCmd = &cobra.Command{
 		oidHost, _ := cmd.Flags().GetString("oid-host")
 		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
 		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
+
 		hydraScope, _ := cmd.Flags().GetString("hydra-scope")
 		loginURI, _ := cmd.Flags().GetString("login-url")
 		userLogin, _ := cmd.Flags().GetString("user-login")
@@ -38,6 +39,7 @@ var updateCmd = &cobra.Command{
 		oidHost, _ := cmd.Flags().GetString("oid-host")
 		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
 		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
+
 		refreshToken, _ := cmd.Flags().GetString("refresh-token")
 
 		return token.NewClient(oidHost, redirectURI, hydraClientID).Update(refreshToken)
