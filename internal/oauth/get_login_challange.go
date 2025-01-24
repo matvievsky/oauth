@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-func (c *Client) GetLoginChallenge(oidHost, hydraClientID, redirectURI string) (*http.Response, error) {
+func (c *Client) GetLoginChallenge(oidHost, hydraClientID, scope, redirectURI string) (*http.Response, error) {
 	rb := make([]byte, 32)
 	_, err := rand.Read(rb)
 	if err != nil {
@@ -17,7 +17,7 @@ func (c *Client) GetLoginChallenge(oidHost, hydraClientID, redirectURI string) (
 	data := url.Values{}
 	data.Add("client_id", hydraClientID)
 	data.Add("response_type", "code")
-	data.Add("scope", "offline_access offline openid")
+	data.Add("scope", scope)
 	data.Add("redirect_uri", redirectURI)
 	data.Add("state", base64.StdEncoding.EncodeToString(rb))
 	data.Add("prompt", "login")

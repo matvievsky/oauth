@@ -7,9 +7,10 @@ import (
 	"net/http"
 )
 
-func (c *Client) ConsentChallenge(consentURI, consentChallenge string) (*http.Response, error) {
+func (c *Client) ConsentChallenge(consentURI, consentChallenge, scope string) (*http.Response, error) {
 	jsonData, err := json.Marshal(map[string]any{
 		"challenge": consentChallenge,
+		"scope":     scope,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling data: %v", err)

@@ -13,7 +13,7 @@ import (
 
 const location = "Location"
 
-func Get(oidHost, hydraClientID, redirectURI, loginURI, userLogin, userPassword, consentURI string) error {
+func Get(oidHost, hydraClientID, scope, redirectURI, loginURI, userLogin, userPassword, consentURI string) error {
 	_, err := uuid.Parse(hydraClientID)
 	if err != nil {
 		return fmt.Errorf("client ID is broken: %w", err)
@@ -21,7 +21,7 @@ func Get(oidHost, hydraClientID, redirectURI, loginURI, userLogin, userPassword,
 
 	client := oauth.NewClient()
 
-	challengeResp, err := client.GetLoginChallenge(oidHost, hydraClientID, redirectURI)
+	challengeResp, err := client.GetLoginChallenge(oidHost, hydraClientID, scope, redirectURI)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func Get(oidHost, hydraClientID, redirectURI, loginURI, userLogin, userPassword,
 		return fmt.Errorf("consent challenge not found in redirect URL")
 	}
 
-	consentChallengeResp, err := client.ConsentChallenge(consentURI, consentChallenge)
+	consentChallengeResp, err := client.ConsentChallenge(consentURI, consentChallenge, scope)
 	if err != nil {
 		return fmt.Errorf("error sending request: %v", err)
 	}
