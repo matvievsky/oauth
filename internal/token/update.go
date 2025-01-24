@@ -27,5 +27,7 @@ func (c *Client) Update(refreshToken string) error {
 		return fmt.Errorf("error decoding response body: %v", err)
 	}
 
+	fmt.Printf("%q", result)
+
 	return nil
 }
