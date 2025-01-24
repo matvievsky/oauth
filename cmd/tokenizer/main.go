@@ -18,6 +18,8 @@ var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Provides new token",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		sharedFlags(cmd)
+
 		oidHost, _ := cmd.Flags().GetString("oid-host")
 		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
 		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
@@ -35,6 +37,8 @@ var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Updates existing token",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		sharedFlags(cmd)
+
 		oidHost, _ := cmd.Flags().GetString("oid-host")
 		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
 		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
@@ -44,11 +48,15 @@ var updateCmd = &cobra.Command{
 	},
 }
 
+func sharedFlags(cmd *cobra.Command) {
+	cmd.Flags().String("oid-host", "oid.dev1.kassirplus.ru", "OpenID host to authenticate")
+	cmd.Flags().String("hydra-client-id", "", "Hydra client ID")
+	cmd.Flags().String("redirect-uri", "https://kirov-next.dev1.kassirplus.ru", "URI to redirect")
+}
+
 func init() {
-	rootCmd.Flags().String("oid-host", "oid.dev1.kassirplus.ru", "OpenID host to authenticate")
-	rootCmd.Flags().String("hydra-client-id", "", "Hydra client ID")
+
 	getCmd.Flags().String("hydra-scope", "openid offline offline_access", "Hydra scope")
-	rootCmd.Flags().String("redirect-uri", "https://kirov-next.dev1.kassirplus.ru", "URI to redirect")
 	getCmd.Flags().String("login-url", "https://api.dev1.kassirplus.ru/kassir.idm.Idm/LogIn", "URI to log in")
 	getCmd.Flags().String("user-login", "", "user login")
 	getCmd.Flags().String("user-password", "", "user password")
