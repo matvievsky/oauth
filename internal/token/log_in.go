@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func (c *Client) LogIn(loginURI, userLogin, userPassword, loginChallenge string) (resp *http.Response, err error) {
+func (c *Client) logIn(loginURI, userLogin, userPassword, loginChallenge string) (resp *http.Response, err error) {
 	jsonData, err := json.Marshal(map[string]any{
 		"email":                   userLogin,
 		"password":                userPassword,

@@ -9,7 +9,7 @@ import (
 
 const redirectTo = "redirectTo"
 
-func (c *Client) GetRedirect(body io.ReadCloser) (*http.Response, error) {
+func (c *Client) getRedirect(body io.ReadCloser) (*http.Response, error) {
 	var result map[string]any
 
 	err := json.NewDecoder(body).Decode(&result)

@@ -17,7 +17,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("client ID is broken: %w", err)
 	}
 
-	challengeResp, err := c.GetLoginChallenge(scope)
+	challengeResp, err := c.getLoginChallenge(scope)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("login challenge not found in redirect URL")
 	}
 
-	logInResp, err := c.LogIn(loginURI, userLogin, userPassword, loginChallenge)
+	logInResp, err := c.logIn(loginURI, userLogin, userPassword, loginChallenge)
 	if err != nil {
 		return fmt.Errorf("error sending request: %v", err)
 	}
@@ -47,7 +47,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("response status code: %v", logInResp.StatusCode)
 	}
 
-	redirect, err := c.GetRedirect(logInResp.Body)
+	redirect, err := c.getRedirect(logInResp.Body)
 	if err != nil {
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
@@ -62,7 +62,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("consent challenge not found in redirect URL")
 	}
 
-	consentChallengeResp, err := c.ConsentChallenge(consentURI, consentChallenge, scope)
+	consentChallengeResp, err := c.consentChallenge(consentURI, consentChallenge, scope)
 	if err != nil {
 		return fmt.Errorf("error sending request: %v", err)
 	}
@@ -72,7 +72,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("response status code: %v", consentChallengeResp.StatusCode)
 	}
 
-	redirect, err = c.GetRedirect(consentChallengeResp.Body)
+	redirect, err = c.getRedirect(consentChallengeResp.Body)
 	if err != nil {
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
@@ -87,7 +87,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("code not found in redirect URL")
 	}
 
-	exchangeResp, err := c.ExchangeToken(map[string]string{
+	exchangeResp, err := c.exchange(map[string]string{
 		"grant_type": "authorization_code",
 		"code":       code,
 	})

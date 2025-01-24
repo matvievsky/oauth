@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (c *Client) ExchangeToken(query map[string]string) (resp *http.Response, err error) {
+func (c *Client) exchange(query map[string]string) (resp *http.Response, err error) {
 	data := url.Values{}
 	data.Add("client_id", c.hydraClientID)
 	data.Add("redirect_uri", c.redirectURI)

@@ -7,7 +7,7 @@ import (
 )
 
 func (c *Client) Update(refreshToken string) error {
-	exchangeResp, err := c.ExchangeToken(map[string]string{
+	exchangeResp, err := c.exchange(map[string]string{
 		"grant_type":   "refresh_token",
 		"refresh_toke": refreshToken,
 	})
