@@ -6,22 +6,18 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/matvievsky/oauth/internal/oauth"
-
 	"github.com/google/uuid"
 )
 
 const location = "Location"
 
-func Get(oidHost, hydraClientID, scope, redirectURI, loginURI, userLogin, userPassword, consentURI string) error {
-	_, err := uuid.Parse(hydraClientID)
+func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string) error {
+	_, err := uuid.Parse(c.hydraClientID)
 	if err != nil {
 		return fmt.Errorf("client ID is broken: %w", err)
 	}
 
-	client := oauth.NewClient()
-
-	challengeResp, err := client.GetLoginChallenge(oidHost, hydraClientID, scope, redirectURI)
+	challengeResp, err := c.GetLoginChallenge(scope)
 	if err != nil {
 		return err
 	}
@@ -41,7 +37,7 @@ func Get(oidHost, hydraClientID, scope, redirectURI, loginURI, userLogin, userPa
 		return fmt.Errorf("login challenge not found in redirect URL")
 	}
 
-	logInResp, err := client.LogIn(loginURI, userLogin, userPassword, loginChallenge)
+	logInResp, err := c.LogIn(loginURI, userLogin, userPassword, loginChallenge)
 	if err != nil {
 		return fmt.Errorf("error sending request: %v", err)
 	}
@@ -51,7 +47,7 @@ func Get(oidHost, hydraClientID, scope, redirectURI, loginURI, userLogin, userPa
 		return fmt.Errorf("response status code: %v", logInResp.StatusCode)
 	}
 
-	redirect, err := client.GetRedirect(logInResp.Body)
+	redirect, err := c.GetRedirect(logInResp.Body)
 	if err != nil {
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
@@ -66,7 +62,7 @@ func Get(oidHost, hydraClientID, scope, redirectURI, loginURI, userLogin, userPa
 		return fmt.Errorf("consent challenge not found in redirect URL")
 	}
 
-	consentChallengeResp, err := client.ConsentChallenge(consentURI, consentChallenge, scope)
+	consentChallengeResp, err := c.ConsentChallenge(consentURI, consentChallenge, scope)
 	if err != nil {
 		return fmt.Errorf("error sending request: %v", err)
 	}
@@ -76,7 +72,7 @@ func Get(oidHost, hydraClientID, scope, redirectURI, loginURI, userLogin, userPa
 		return fmt.Errorf("response status code: %v", consentChallengeResp.StatusCode)
 	}
 
-	redirect, err = client.GetRedirect(consentChallengeResp.Body)
+	redirect, err = c.GetRedirect(consentChallengeResp.Body)
 	if err != nil {
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
@@ -91,7 +87,10 @@ func Get(oidHost, hydraClientID, scope, redirectURI, loginURI, userLogin, userPa
 		return fmt.Errorf("code not found in redirect URL")
 	}
 
-	exchangeResp, err := client.ExchangeToken(redirectURI, oidHost, hydraClientID, code)
+	exchangeResp, err := c.ExchangeToken(map[string]string{
+		"grant_type": "authorization_code",
+		"code":       code,
+	})
 	if err != nil {
 		return fmt.Errorf("error sending request: %v", err)
 	}

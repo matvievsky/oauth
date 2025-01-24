@@ -1,4 +1,4 @@
-package oauth
+package token
 
 import (
 	"crypto/rand"
@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-func (c *Client) GetLoginChallenge(oidHost, hydraClientID, scope, redirectURI string) (*http.Response, error) {
+func (c *Client) GetLoginChallenge(scope string) (*http.Response, error) {
 	rb := make([]byte, 32)
 	_, err := rand.Read(rb)
 	if err != nil {
@@ -15,20 +15,20 @@ func (c *Client) GetLoginChallenge(oidHost, hydraClientID, scope, redirectURI st
 	}
 
 	data := url.Values{}
-	data.Add("client_id", hydraClientID)
+	data.Add("client_id", c.hydraClientID)
 	data.Add("response_type", "code")
 	data.Add("scope", scope)
-	data.Add("redirect_uri", redirectURI)
+	data.Add("redirect_uri", c.redirectURI)
 	data.Add("state", base64.StdEncoding.EncodeToString(rb))
 	data.Add("prompt", "login")
 
 	u := url.URL{
 		Scheme: "https",
-		Host:   oidHost,
+		Host:   c.oidHost,
 		Path:   "oauth2/auth",
 	}
 
 	u.RawQuery = data.Encode()
 
-	return c.Get(u.String())
+	return c.Client.Get(u.String())
 }

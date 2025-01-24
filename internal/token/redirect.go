@@ -1,4 +1,4 @@
-package oauth
+package token
 
 import (
 	"encoding/json"
@@ -27,7 +27,7 @@ func (c *Client) GetRedirect(body io.ReadCloser) (*http.Response, error) {
 		return nil, fmt.Errorf("%s not found in response", redirectTo)
 	}
 
-	resp, err := c.Get(redirectTo)
+	resp, err := c.Client.Get(redirectTo)
 	if err != nil {
 		return nil, fmt.Errorf("error following redirect: %w", err)
 	}

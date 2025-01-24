@@ -18,31 +18,45 @@ var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Provides new token",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
-		hydraScope, _ := cmd.Flags().GetString("hydra-scope")
 		oidHost, _ := cmd.Flags().GetString("oid-host")
 		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
+		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
+		hydraScope, _ := cmd.Flags().GetString("hydra-scope")
 		loginURI, _ := cmd.Flags().GetString("login-url")
 		userLogin, _ := cmd.Flags().GetString("user-login")
 		userPassword, _ := cmd.Flags().GetString("user-password")
 		consentURI, _ := cmd.Flags().GetString("consent-url")
 
-		return token.Get(oidHost, hydraClientID, hydraScope, redirectURI, loginURI, userLogin, userPassword, consentURI)
+		return token.NewClient(oidHost, redirectURI, hydraClientID).Get(hydraScope, loginURI, userLogin, userPassword, consentURI)
+	},
+}
+
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Updates existing token",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		oidHost, _ := cmd.Flags().GetString("oid-host")
+		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
+		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
+		refreshToken, _ := cmd.Flags().GetString("refresh-token")
+
+		return token.NewClient(oidHost, redirectURI, hydraClientID).Update(refreshToken)
 	},
 }
 
 func init() {
-	getCmd.Flags().String("hydra-client-id", "", "Hydra client ID")
+	rootCmd.Flags().String("oid-host", "oid.dev1.kassirplus.ru", "OpenID host to authenticate")
+	rootCmd.Flags().String("hydra-client-id", "", "Hydra client ID")
 	getCmd.Flags().String("hydra-scope", "openid offline offline_access", "Hydra scope")
-	getCmd.Flags().String("oid-host", "oid.dev1.kassirplus.ru", "OpenID host to authenticate")
-	getCmd.Flags().String("redirect-uri", "https://kirov-next.dev1.kassirplus.ru", "URI to redirect")
+	rootCmd.Flags().String("redirect-uri", "https://kirov-next.dev1.kassirplus.ru", "URI to redirect")
 	getCmd.Flags().String("login-url", "https://api.dev1.kassirplus.ru/kassir.idm.Idm/LogIn", "URI to log in")
 	getCmd.Flags().String("user-login", "", "user login")
 	getCmd.Flags().String("user-password", "", "user password")
 	getCmd.Flags().String("consent-url", "https://api.dev1.kassirplus.ru/kassir.idm.Idm/Consent", "URI to consent")
+	updateCmd.Flags().String("refresh-token", "", "Token to refresh")
 }
 
 func main() {
-	rootCmd.AddCommand(getCmd)
+	rootCmd.AddCommand(getCmd, updateCmd)
 	rootCmd.Execute()
 }
