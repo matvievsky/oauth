@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const location = "Location"
+const Location = "Location"
 
 func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string) error {
 	_, err := uuid.Parse(c.hydraClientID)
@@ -17,17 +17,17 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("client ID is broken: %w", err)
 	}
 
-	challengeResp, err := c.getLoginChallenge(scope)
+	loginChallengeResp, err := c.GetLoginChallenge(scope)
 	if err != nil {
 		return err
 	}
-	defer challengeResp.Body.Close()
+	defer loginChallengeResp.Body.Close()
 
-	if !(challengeResp.StatusCode >= 300 && challengeResp.StatusCode < 400) {
-		return fmt.Errorf("response status code: %d", challengeResp.StatusCode)
+	if !(loginChallengeResp.StatusCode >= 300 && loginChallengeResp.StatusCode < 400) {
+		return fmt.Errorf("response status code: %d", loginChallengeResp.StatusCode)
 	}
 
-	parsedURL, err := url.Parse(challengeResp.Header.Get(location))
+	parsedURL, err := url.Parse(loginChallengeResp.Header.Get(Location))
 	if err != nil {
 		return fmt.Errorf("error parsing redirect URL: %v", err)
 	}
@@ -52,7 +52,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
 
-	parsedURL, err = url.Parse(redirect.Header.Get(location))
+	parsedURL, err = url.Parse(redirect.Header.Get(Location))
 	if err != nil {
 		return fmt.Errorf("error parsing redirect URL: %v", err)
 	}
@@ -77,7 +77,7 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
 
-	parsedURL, err = url.Parse(redirect.Header.Get(location))
+	parsedURL, err = url.Parse(redirect.Header.Get(Location))
 	if err != nil {
 		return fmt.Errorf("error parsing redirect URL: %v", err)
 	}

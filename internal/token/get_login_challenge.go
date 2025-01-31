@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-func (c *Client) getLoginChallenge(scope string) (*http.Response, error) {
+func (c *Client) GetLoginChallenge(scope string) (*http.Response, error) {
 	rb := make([]byte, 32)
 	_, err := rand.Read(rb)
 	if err != nil {

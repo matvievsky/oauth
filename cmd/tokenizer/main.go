@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"net/url"
+
 	"github.com/matvievsky/oauth/internal/token"
 
 	"github.com/spf13/cobra"
@@ -32,6 +35,42 @@ var getCmd = &cobra.Command{
 	},
 }
 
+var getLoginChallengeCmd = &cobra.Command{
+	Use:   "get-login-challenge",
+	Short: "Provides new login challenge",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		oidHost, _ := cmd.Flags().GetString("oid-host")
+		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
+		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
+
+		hydraScope, _ := cmd.Flags().GetString("hydra-scope")
+
+		loginChallengeResp, err := token.NewClient(oidHost, redirectURI, hydraClientID).GetLoginChallenge(hydraScope)
+		if err != nil {
+			return err
+		}
+		defer loginChallengeResp.Body.Close()
+
+		if !(loginChallengeResp.StatusCode >= 300 && loginChallengeResp.StatusCode < 400) {
+			return fmt.Errorf("response status code: %d", loginChallengeResp.StatusCode)
+		}
+
+		parsedURL, err := url.Parse(loginChallengeResp.Header.Get(token.Location))
+		if err != nil {
+			return fmt.Errorf("error parsing redirect URL: %v", err)
+		}
+
+		loginChallenge := parsedURL.Query().Get("login_challenge")
+		if loginChallenge == "" {
+			return fmt.Errorf("login challenge not found in redirect URL")
+		}
+
+		fmt.Println(loginChallenge)
+
+		return nil
+	},
+}
+
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Updates existing token",
@@ -47,7 +86,7 @@ var updateCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(getCmd, updateCmd)
+	rootCmd.AddCommand(getCmd, getLoginChallengeCmd, updateCmd)
 
 	for _, cmd := range rootCmd.Commands() {
 		cmd.Flags().String("oid-host", "oid.dev1.kassirplus.ru", "OpenID host to authenticate")
