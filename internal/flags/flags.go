@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// []Name/Usage/DefaultValue
+// []{Name/DefaultValue/Usage}
 type Flags []string
 
 func Init() Flags {
