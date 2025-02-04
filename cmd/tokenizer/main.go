@@ -2,105 +2,120 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net/url"
 
+	"github.com/matvievsky/oauth/internal/flags"
 	"github.com/matvievsky/oauth/internal/token"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var rootCmd = &cobra.Command{
-	Short: "OAuth 2.0 tokenizer",
-	Long: `
+var (
+	rootCmd = &cobra.Command{
+		Short: "OAuth 2.0 tokenizer",
+		Long: `
 Ory Hydra based OAuth 2.0 tokenizer:
 
-get - receive bearer access token`,
-}
+get - Receive bearer access token
+get-login-challenge - Provides new login challenge only
+update - Updates existing token
+`,
+	}
 
-var getCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Provides new token",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		oidHost, _ := cmd.Flags().GetString("oid-host")
-		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
-		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
+	commonFlags = flags.Init().
+			WithFlag("oid-host", "", "OpenID host to authenticate").
+			WithFlag("hydra-client-id", "", "Hydra client ID").
+			WithFlag("redirect-uri", "", "URI to redirect")
+)
 
-		hydraScope, _ := cmd.Flags().GetString("hydra-scope")
-		loginURI, _ := cmd.Flags().GetString("login-url")
-		userLogin, _ := cmd.Flags().GetString("user-login")
-		userPassword, _ := cmd.Flags().GetString("user-password")
-		consentURI, _ := cmd.Flags().GetString("consent-url")
+var commandToFlags = map[*cobra.Command]flags.Flags{
+	{
+		Use:   "get",
+		Short: "Provides new token",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return token.NewClient(
+				viper.GetString("oid-host"),
+				viper.GetString("redirect-uri"),
+				viper.GetString("hydra-client-id"),
+			).Get(
+				viper.GetString("hydra-scope"),
+				viper.GetString("login-url"),
+				viper.GetString("user-login"),
+				viper.GetString("user-password"),
+				viper.GetString("consent-url"),
+			)
+		},
+	}: append(commonFlags, flags.Init().
+		WithFlag("hydra-scope", "", "Hydra scope").
+		WithFlag("login-url", "", "URI to log in").
+		WithFlag("user-login", "", "user login").
+		WithFlag("user-password", "", "user password").
+		WithFlag("consent-url", "", "URI to consent")...),
+	{
+		Use:   "get-login-challenge",
+		Short: "Provides new login challenge",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			loginChallengeResp, err := token.NewClient(
+				viper.GetString("oid-host"),
+				viper.GetString("redirect-uri"),
+				viper.GetString("hydra-client-id"),
+			).GetLoginChallenge(viper.GetString("hydra-scope"))
+			if err != nil {
+				return err
+			}
+			defer loginChallengeResp.Body.Close()
 
-		return token.NewClient(oidHost, redirectURI, hydraClientID).Get(hydraScope, loginURI, userLogin, userPassword, consentURI)
-	},
-}
+			if !(loginChallengeResp.StatusCode >= 300 && loginChallengeResp.StatusCode < 400) {
+				return fmt.Errorf("response status code: %d", loginChallengeResp.StatusCode)
+			}
 
-var getLoginChallengeCmd = &cobra.Command{
-	Use:   "get-login-challenge",
-	Short: "Provides new login challenge",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		oidHost, _ := cmd.Flags().GetString("oid-host")
-		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
-		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
+			parsedURL, err := url.Parse(loginChallengeResp.Header.Get(token.Location))
+			if err != nil {
+				return fmt.Errorf("error parsing redirect URL: %v", err)
+			}
 
-		hydraScope, _ := cmd.Flags().GetString("hydra-scope")
+			loginChallenge := parsedURL.Query().Get("login_challenge")
+			if loginChallenge == "" {
+				return fmt.Errorf("login challenge not found in redirect URL")
+			}
 
-		loginChallengeResp, err := token.NewClient(oidHost, redirectURI, hydraClientID).GetLoginChallenge(hydraScope)
-		if err != nil {
-			return err
-		}
-		defer loginChallengeResp.Body.Close()
-
-		if !(loginChallengeResp.StatusCode >= 300 && loginChallengeResp.StatusCode < 400) {
-			return fmt.Errorf("response status code: %d", loginChallengeResp.StatusCode)
-		}
-
-		parsedURL, err := url.Parse(loginChallengeResp.Header.Get(token.Location))
-		if err != nil {
-			return fmt.Errorf("error parsing redirect URL: %v", err)
-		}
-
-		loginChallenge := parsedURL.Query().Get("login_challenge")
-		if loginChallenge == "" {
-			return fmt.Errorf("login challenge not found in redirect URL")
-		}
-
-		fmt.Println(loginChallenge)
-
-		return nil
-	},
-}
-
-var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Updates existing token",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		oidHost, _ := cmd.Flags().GetString("oid-host")
-		redirectURI, _ := cmd.Flags().GetString("redirect-uri")
-		hydraClientID, _ := cmd.Flags().GetString("hydra-client-id")
-
-		refreshToken, _ := cmd.Flags().GetString("refresh-token")
-
-		return token.NewClient(oidHost, redirectURI, hydraClientID).Update(refreshToken)
-	},
+			fmt.Println(loginChallenge)
+			return nil
+		},
+	}: append(commonFlags, nil...),
+	{
+		Use:   "update",
+		Short: "Updates existing token",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return token.NewClient(
+				viper.GetString("oid-host"),
+				viper.GetString("redirect-uri"),
+				viper.GetString("hydra-client-id"),
+			).Update(viper.GetString("refresh-token"))
+		},
+	}: append(commonFlags, flags.Init().
+		WithFlag("refresh-token", "", "Token to refresh")...),
 }
 
 func init() {
-	rootCmd.AddCommand(getCmd, getLoginChallengeCmd, updateCmd)
+	viper.SetEnvPrefix("TOKENIZER")
+	viper.AutomaticEnv()
+	viper.SetConfigFile(".env")
 
-	for _, cmd := range rootCmd.Commands() {
-		cmd.Flags().String("oid-host", "oid.dev1.kassirplus.ru", "OpenID host to authenticate")
-		cmd.Flags().String("hydra-client-id", "", "Hydra client ID")
-		cmd.Flags().String("redirect-uri", "https://kirov-next.dev1.kassirplus.ru", "URI to redirect")
+	if err := viper.ReadInConfig(); err != nil {
+		slog.Info("No .env file found")
 	}
-
-	getCmd.Flags().String("hydra-scope", "openid offline offline_access", "Hydra scope")
-	getCmd.Flags().String("login-url", "https://api.dev1.kassirplus.ru/kassir.idm.Idm/LogIn", "URI to log in")
-	getCmd.Flags().String("user-login", "", "user login")
-	getCmd.Flags().String("user-password", "", "user password")
-	getCmd.Flags().String("consent-url", "https://api.dev1.kassirplus.ru/kassir.idm.Idm/Consent", "URI to consent")
-	updateCmd.Flags().String("refresh-token", "", "Token to refresh")
-
+	for _, key := range viper.AllKeys() {
+		slog.Info("Loaded environment variable", "key", key, "value", viper.GetString(key))
+	}
+	for command, flags := range commandToFlags {
+		if err := flags.Bind(command); err != nil {
+			slog.Error("can't bind flags to command", slog.Any(command.Short, err))
+		}
+		rootCmd.AddCommand(command)
+	}
 }
 
 func main() {

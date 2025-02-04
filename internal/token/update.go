@@ -27,6 +27,7 @@ func (c *Client) Update(refreshToken string) error {
 		return fmt.Errorf("error decoding response body: %v", err)
 	}
 
+	// TODO: Add os.SetEnv to the updated access token
 	fmt.Printf("%q", result)
 
 	return nil
