@@ -3,6 +3,7 @@ package token
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 
@@ -27,15 +28,17 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("response status code: %d", loginChallengeResp.StatusCode)
 	}
 
-	parsedURL, err := url.Parse(loginChallengeResp.Header.Get(Location))
+	parsedURI, err := url.ParseRequestURI(loginChallengeResp.Header.Get(Location))
 	if err != nil {
 		return fmt.Errorf("error parsing redirect URL: %v", err)
 	}
 
-	loginChallenge := parsedURL.Query().Get("login_challenge")
+	loginChallenge := parsedURI.Query().Get("login_challenge")
 	if loginChallenge == "" {
 		return fmt.Errorf("login challenge not found in redirect URL")
 	}
+
+	slog.Debug(loginChallenge)
 
 	logInResp, err := c.logIn(loginURI, userLogin, userPassword, loginChallenge)
 	if err != nil {
@@ -52,12 +55,12 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
 
-	parsedURL, err = url.Parse(redirect.Header.Get(Location))
+	parsedURI, err = url.ParseRequestURI(redirect.Header.Get(Location))
 	if err != nil {
 		return fmt.Errorf("error parsing redirect URL: %v", err)
 	}
 
-	consentChallenge := parsedURL.Query().Get("consent_challenge")
+	consentChallenge := parsedURI.Query().Get("consent_challenge")
 	if consentChallenge == "" {
 		return fmt.Errorf("consent challenge not found in redirect URL")
 	}
@@ -77,12 +80,12 @@ func (c *Client) Get(scope, loginURI, userLogin, userPassword, consentURI string
 		return fmt.Errorf("can't get redirect: %w", err)
 	}
 
-	parsedURL, err = url.Parse(redirect.Header.Get(Location))
+	parsedURI, err = url.ParseRequestURI(redirect.Header.Get(Location))
 	if err != nil {
 		return fmt.Errorf("error parsing redirect URL: %v", err)
 	}
 
-	code := parsedURL.Query().Get("code")
+	code := parsedURI.Query().Get("code")
 	if code == "" {
 		return fmt.Errorf("code not found in redirect URL")
 	}
